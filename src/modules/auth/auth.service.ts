@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { DEFAULT_ROLE_CODE } from '../../common/constants/role.constants';
 import { PrismaService } from '../../database/prisma.service';
 import { parseId } from '../../common/utils/parse-id';
 import { mapToPublicUser } from '../users/public-user.mapper';
@@ -10,8 +11,6 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { AuthResponse } from './types/auth-response.type';
 import { JwtPayload } from './types/jwt-payload.type';
-
-const DEFAULT_ROLE_CODE = 'CLIENT_FREE';
 
 @Injectable()
 export class AuthService {
