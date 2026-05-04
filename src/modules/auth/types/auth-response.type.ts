@@ -1,4 +1,4 @@
-import { PublicUser } from '../../users/types/public-user.type';
+import type { PublicUser } from '../../users/types/public-user.type';
 
 export interface AuthResponse {
   accessToken: string;

@@ -1,4 +1,4 @@
-import { PublicUser } from './types/public-user.type';
+import type { PublicUser } from './types/public-user.type';
 
 type UserWithRoleCode = {
   id: bigint;

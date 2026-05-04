@@ -1,4 +1,9 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { parseId } from '../../common/utils/parse-id';
 import { serializeBigInts } from '../../common/utils/serialize-bigint';
 import { PrismaService } from '../../database/prisma.service';
