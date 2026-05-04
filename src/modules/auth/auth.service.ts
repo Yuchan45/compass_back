@@ -3,12 +3,15 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../database/prisma.service';
 import { parseId } from '../../common/utils/parse-id';
+import { mapToPublicUser } from '../users/public-user.mapper';
 import { userPublicSelect } from '../users/user.select';
 import { PublicUser } from '../users/types/public-user.type';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { AuthResponse } from './types/auth-response.type';
 import { JwtPayload } from './types/jwt-payload.type';
+
+const DEFAULT_ROLE_CODE = 'CLIENT_FREE';
 
 @Injectable()
 export class AuthService {
@@ -50,10 +53,24 @@ export class AuthService {
       }
     }
 
+    const defaultRole = await this.prisma.role.findUnique({
+      where: {
+        code: DEFAULT_ROLE_CODE,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!defaultRole) {
+      throw new ConflictException('Roles catalog is not initialized.');
+    }
+
     const passwordHash = await bcrypt.hash(dto.password, 12);
     const user = await this.prisma.user.create({
       data: {
         languageId,
+        roleId: defaultRole.id,
         email,
         username,
         displayName: dto.displayName,
@@ -71,6 +88,10 @@ export class AuthService {
       where: {
         OR: [{ email: identifier }, { username: identifier }],
       },
+      select: {
+        ...userPublicSelect,
+        passwordHash: true,
+      },
     });
 
     if (!user) {
@@ -83,16 +104,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials.');
     }
 
-    return this.createAuthResponse(this.toPublicUser({
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      displayName: user.displayName,
-      avatarUrl: user.avatarUrl,
-      lastSeenAt: user.lastSeenAt,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    }));
+    return this.createAuthResponse(this.toPublicUser(user));
   }
 
   private async createAuthResponse(user: PublicUser): Promise<AuthResponse> {
@@ -114,13 +126,13 @@ export class AuthService {
     username: string;
     displayName: string;
     avatarUrl: string | null;
+    role: {
+      code: string;
+    };
     lastSeenAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
   }): PublicUser {
-    return {
-      ...user,
-      id: user.id.toString(),
-    };
+    return mapToPublicUser(user);
   }
 }

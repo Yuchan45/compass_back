@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { parseId } from '../../common/utils/parse-id';
-import { serializeBigInts } from '../../common/utils/serialize-bigint';
 import { PrismaService } from '../../database/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { mapToPublicUser } from './public-user.mapper';
 import { userPublicSelect } from './user.select';
 
 @Injectable()
@@ -22,7 +22,7 @@ export class UsersService {
       throw new NotFoundException('User not found.');
     }
 
-    return serializeBigInts(user);
+    return mapToPublicUser(user);
   }
 
   async updateProfile(id: string, dto: UpdateProfileDto) {
@@ -38,6 +38,6 @@ export class UsersService {
       select: userPublicSelect,
     });
 
-    return serializeBigInts(user);
+    return mapToPublicUser(user);
   }
 }
