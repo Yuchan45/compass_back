@@ -34,9 +34,9 @@ export class AuthService {
     if (dto.languageId) {
       languageId = parseId(dto.languageId, 'languageId');
     } else {
-      const defaultLanguage = await this.prisma.language.findFirst({
-        orderBy: {
-          id: 'asc',
+      const defaultLanguage = await this.prisma.language.findUnique({
+        where: {
+          code: 'EN',
         },
         select: {
           id: true,
@@ -46,15 +46,7 @@ export class AuthService {
       if (defaultLanguage) {
         languageId = defaultLanguage.id;
       } else {
-        const createdLanguage = await this.prisma.language.create({
-          data: {
-            language: 'English',
-          },
-          select: {
-            id: true,
-          },
-        });
-        languageId = createdLanguage.id;
+        throw new ConflictException('Language catalog is not initialized.');
       }
     }
 

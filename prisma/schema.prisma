@@ -39,6 +39,7 @@ model User {
 model Language {
   id       BigInt @id @default(autoincrement()) @db.BigInt
   language String @unique
+  code     String @unique @db.VarChar(10)
   users    User[]
 
   @@map("lang")
