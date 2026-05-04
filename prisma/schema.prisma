@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  BLOCKED
+
+  @@map("friendship_status")
+}
+
+model User {
+  id           BigInt    @id @default(autoincrement()) @db.BigInt
+  languageId   BigInt    @map("language_id") @db.BigInt
+  email        String    @unique
+  username     String    @unique
+  displayName  String    @map("display_name")
+  passwordHash String    @map("password_hash")
+  avatarUrl    String?   @map("avatar_url")
+  lastSeenAt   DateTime? @map("last_seen_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  language     Language  @relation(fields: [languageId], references: [id])
+
+  requestedFriendships Friendship[] @relation("FriendshipRequester")
+  receivedFriendships  Friendship[] @relation("FriendshipAddressee")
+  locations            Location[]
+
+  @@map("users")
+}
+
+model Language {
+  id       BigInt @id @default(autoincrement()) @db.BigInt
+  language String @unique
+  users    User[]
+
+  @@map("lang")
+}
+
+model Friendship {
+  id          BigInt           @id @default(autoincrement()) @db.BigInt
+  requesterId BigInt           @map("requester_id") @db.BigInt
+  addresseeId BigInt           @map("addressee_id") @db.BigInt
+  status      FriendshipStatus @default(PENDING)
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  requester User @relation("FriendshipRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addressee User @relation("FriendshipAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, addresseeId])
+  @@index([requesterId, status])
+  @@index([addresseeId, status])
+  @@map("friendships")
+}
+
+model Location {
+  id           BigInt   @id @default(autoincrement()) @db.BigInt
+  userId       BigInt   @map("user_id") @db.BigInt
+  latitude     Float
+  longitude    Float
+  accuracy     Float?
+  heading      Float?
+  speed        Float?
+  batteryLevel Int?     @map("battery_level")
+  recordedAt   DateTime @default(now()) @map("recorded_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, recordedAt])
+  @@index([recordedAt])
+  @@map("locations")
+}
