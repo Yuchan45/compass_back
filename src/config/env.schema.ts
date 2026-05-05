@@ -6,5 +6,6 @@ export const envSchema = Joi.object({
   DATABASE_URL: Joi.string().required(),
   JWT_SECRET: Joi.string().min(32).required(),
   JWT_EXPIRES_IN: Joi.string().default('15m'),
+  GOOGLE_CLIENT_ID: Joi.string().required(),
   CORS_ORIGIN: Joi.string().allow('').default(''),
 });

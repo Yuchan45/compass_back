@@ -35,6 +35,7 @@ npm run prisma:studio
 - `GET /api/health`
 - `POST /api/auth/register`
 - `POST /api/auth/login`
+- `POST /api/auth/google`
 - `GET /api/users/me`
 - `PATCH /api/users/me`
 - `POST /api/friendships/requests`

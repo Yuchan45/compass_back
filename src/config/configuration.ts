@@ -10,6 +10,7 @@ export default () => ({
   auth: {
     jwtSecret: process.env.JWT_SECRET,
     jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '15m',
+    googleClientId: process.env.GOOGLE_CLIENT_ID,
   },
   database: {
     url: process.env.DATABASE_URL,
