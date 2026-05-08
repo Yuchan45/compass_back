@@ -6,7 +6,7 @@ import { OAuth2Client, TokenPayload } from 'google-auth-library';
 import { DEFAULT_ROLE_CODE } from '../../common/constants/role.constants';
 import { PrismaService } from '../../database/prisma.service';
 import { parseId } from '../../common/utils/parse-id';
-import { mapToPublicUser } from '../users/public-user.mapper';
+import { mapToPublicUser, type UserWithPublicProfile } from '../users/public-user.mapper';
 import { userPublicSelect } from '../users/user.select';
 import { PublicUser } from '../users/types/public-user.type';
 import { GoogleLoginDto } from './dto/google-login.dto';
@@ -68,10 +68,21 @@ export class AuthService {
       select: {
         ...userPublicSelect,
         passwordHash: true,
+        googleSub: true,
       },
     });
 
-    if (!user || !user.passwordHash) {
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials.');
+    }
+
+    if (!user.passwordHash) {
+      if (user.googleSub) {
+        throw new ConflictException(
+          'This account uses Google Sign-In. Continue with Google or set a password first.',
+        );
+      }
+
       throw new UnauthorizedException('Invalid credentials.');
     }
 
@@ -264,19 +275,7 @@ export class AuthService {
     };
   }
 
-  private toPublicUser(user: {
-    id: bigint;
-    email: string;
-    username: string;
-    displayName: string;
-    avatarUrl: string | null;
-    role: {
-      code: string;
-    };
-    lastSeenAt: Date | null;
-    createdAt: Date;
-    updatedAt: Date;
-  }): PublicUser {
+  private toPublicUser(user: UserWithPublicProfile): PublicUser {
     return mapToPublicUser(user);
   }
 }

@@ -1,12 +1,18 @@
-import { UnauthorizedException } from '@nestjs/common';
+import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 
 const publicUser = {
   id: 1n,
+  languageId: 10n,
   email: 'user@gmail.com',
   username: 'user',
   displayName: 'User Name',
   avatarUrl: null,
+  locationSharingEnabled: true,
+  language: {
+    code: 'EN',
+    language: 'English',
+  },
   role: {
     code: 'CLIENT_FREE',
   },
@@ -166,11 +172,12 @@ describe('AuthService', () => {
     );
   });
 
-  it('rejects password login for users without local password', async () => {
+  it('rejects password login for Google accounts without local password', async () => {
     const { service, prisma } = createService();
 
     prisma.user.findFirst.mockResolvedValue({
       ...publicUser,
+      googleSub: 'google-sub-1',
       passwordHash: null,
     });
 
@@ -179,6 +186,6 @@ describe('AuthService', () => {
         identifier: 'user@gmail.com',
         password: 'password123',
       }),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+    ).rejects.toBeInstanceOf(ConflictException);
   });
 });
