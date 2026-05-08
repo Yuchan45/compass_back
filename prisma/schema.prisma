@@ -16,52 +16,91 @@ enum FriendshipStatus {
   @@map("friendship_status")
 }
 
-model User {
-  id           BigInt    @id @default(autoincrement()) @db.BigInt
-  languageId   BigInt    @map("language_id") @db.BigInt
-  roleId       BigInt    @map("role_id") @db.BigInt
-  email        String    @unique
-  username     String    @unique
-  displayName  String    @map("display_name")
-  passwordHash String?   @map("password_hash")
-  googleSub    String?   @unique @map("google_sub")
-  avatarUrl    String?   @map("avatar_url")
-  lastSeenAt   DateTime? @map("last_seen_at")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
-  language     Language  @relation(fields: [languageId], references: [id])
-  role         Role      @relation(fields: [roleId], references: [id])
+enum MeetupStatus {
+  CANDIDATE
+  ACTIVE
+  FINISHED
+  DISCARDED
 
-  requestedFriendships Friendship[] @relation("FriendshipRequester")
-  receivedFriendships  Friendship[] @relation("FriendshipAddressee")
-  locations            Location[]
+  @@map("meetup_status")
+}
 
-  @@index([roleId])
-  @@map("users")
+enum ChallengeStatus {
+  ACTIVE
+  COMPLETED
+  FAILED
+  CANCELLED
+
+  @@map("challenge_status")
 }
 
 model Language {
   id       BigInt @id @default(autoincrement()) @db.BigInt
   language String @unique
-  code     String @unique @db.VarChar(10)
+  code     String @unique
   users    User[]
 
   @@map("lang")
 }
 
 model Role {
-  id          BigInt   @id @default(autoincrement()) @db.BigInt
-  role        String   @unique @db.VarChar(80)
-  code        String   @unique @db.VarChar(50)
-  description String?  @db.VarChar(255)
-  isActive    Boolean  @default(true) @map("is_active")
-  isSystem    Boolean  @default(false) @map("is_system")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  id          BigInt  @id @default(autoincrement()) @db.BigInt
+  role        String  @unique
+  code        String  @unique
+  description String? @db.VarChar(255)
   users       User[]
 
-  @@index([code, isActive])
   @@map("roles")
+}
+
+model Country {
+  id        BigInt   @id @default(autoincrement()) @db.BigInt
+  name      String   @unique
+  code      String   @unique @db.VarChar(10)
+  iso3      String?  @unique @db.VarChar(10)
+  createdAt DateTime @default(now()) @map("created_at")
+  meetups   Meetup[]
+
+  @@map("countries")
+}
+
+model User {
+  id                     BigInt    @id @default(autoincrement()) @db.BigInt
+  languageId             BigInt    @map("language_id") @db.BigInt
+  roleId                 BigInt    @map("role_id") @db.BigInt
+  email                  String    @unique
+  googleSub              String?   @unique @map("google_sub")
+  username               String    @unique
+  displayName            String    @map("display_name")
+  passwordHash           String?   @map("password_hash")
+  avatarUrl              String?   @map("avatar_url")
+  lastSeenAt             DateTime? @map("last_seen_at")
+  locationSharingEnabled Boolean   @default(true) @map("location_sharing_enabled")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+
+  language Language @relation(fields: [languageId], references: [id])
+  role     Role     @relation(fields: [roleId], references: [id])
+
+  requestedFriendships Friendship[]          @relation("FriendshipRequester")
+  receivedFriendships  Friendship[]          @relation("FriendshipAddressee")
+  locations            Location[]
+  meetupsAsUserA       Meetup[]              @relation("MeetupUserA")
+  meetupsAsUserB       Meetup[]              @relation("MeetupUserB")
+  meetupLocationPoints MeetupLocationPoint[]
+
+  friendshipStatsAsUserA       FriendshipStats[]         @relation("FriendshipStatsUserA")
+  friendshipStatsAsUserB       FriendshipStats[]         @relation("FriendshipStatsUserB")
+  friendshipPeriodStatsAsUserA FriendshipPeriodStats[]   @relation("FriendshipPeriodStatsUserA")
+  friendshipPeriodStatsAsUserB FriendshipPeriodStats[]   @relation("FriendshipPeriodStatsUserB")
+  friendshipFrequentAsUserA    FriendshipFrequentPlace[] @relation("FriendshipFrequentPlaceUserA")
+  friendshipFrequentAsUserB    FriendshipFrequentPlace[] @relation("FriendshipFrequentPlaceUserB")
+  userAchievements             UserAchievement[]         @relation("UserAchievements")
+  relatedUserAchievements      UserAchievement[]         @relation("RelatedUserAchievements")
+  friendshipChallengesAsUserA  FriendshipChallenge[]     @relation("FriendshipChallengeUserA")
+  friendshipChallengesAsUserB  FriendshipChallenge[]     @relation("FriendshipChallengeUserB")
+
+  @@map("users")
 }
 
 model Friendship {
@@ -98,4 +137,207 @@ model Location {
   @@index([userId, recordedAt])
   @@index([recordedAt])
   @@map("locations")
+}
+
+model Meetup {
+  id                BigInt       @id @default(autoincrement()) @db.BigInt
+  userAId           BigInt       @map("user_a_id") @db.BigInt
+  userBId           BigInt       @map("user_b_id") @db.BigInt
+  countryId         BigInt?      @map("country_id") @db.BigInt
+  startedAt         DateTime     @map("started_at")
+  endedAt           DateTime?    @map("ended_at")
+  durationSeconds   Int?         @map("duration_seconds")
+  minDistanceMeters Float?       @map("min_distance_meters")
+  avgDistanceMeters Float?       @map("avg_distance_meters")
+  city              String?
+  placeName         String?      @map("place_name")
+  latitude          Float?
+  longitude         Float?
+  status            MeetupStatus @default(CANDIDATE)
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
+
+  userA               User                  @relation("MeetupUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB               User                  @relation("MeetupUserB", fields: [userBId], references: [id], onDelete: Cascade)
+  country             Country?              @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  locationPoints      MeetupLocationPoint[]
+  relatedAchievements UserAchievement[]     @relation("RelatedMeetupAchievements")
+
+  @@index([userAId, userBId, startedAt])
+  @@index([userAId, startedAt])
+  @@index([userBId, startedAt])
+  @@index([countryId])
+  @@index([city])
+  @@map("meetups")
+}
+
+model MeetupLocationPoint {
+  id         BigInt   @id @default(autoincrement()) @db.BigInt
+  meetupId   BigInt   @map("meetup_id") @db.BigInt
+  userId     BigInt   @map("user_id") @db.BigInt
+  latitude   Float
+  longitude  Float
+  accuracy   Float?
+  recordedAt DateTime @map("recorded_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  meetup Meetup @relation(fields: [meetupId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([meetupId, recordedAt])
+  @@index([userId, recordedAt])
+  @@map("meetup_location_points")
+}
+
+model FriendshipStats {
+  id                   BigInt    @id @default(autoincrement()) @db.BigInt
+  userAId              BigInt    @map("user_a_id") @db.BigInt
+  userBId              BigInt    @map("user_b_id") @db.BigInt
+  totalMeetups         Int       @default(0) @map("total_meetups")
+  totalDurationSeconds Int       @default(0) @map("total_duration_seconds")
+  totalDistanceMeters  Float     @default(0) @map("total_distance_meters")
+  firstMeetupAt        DateTime? @map("first_meetup_at")
+  lastMeetupAt         DateTime? @map("last_meetup_at")
+  longestMeetupSeconds Int       @default(0) @map("longest_meetup_seconds")
+  currentStreakDays    Int       @default(0) @map("current_streak_days")
+  bestStreakDays       Int       @default(0) @map("best_streak_days")
+  streakLastDate       DateTime? @map("streak_last_date") @db.Date
+  friendshipLevel      Int       @default(1) @map("friendship_level")
+  friendshipXp         Int       @default(0) @map("friendship_xp")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  userA User @relation("FriendshipStatsUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB User @relation("FriendshipStatsUserB", fields: [userBId], references: [id], onDelete: Cascade)
+
+  @@unique([userAId, userBId])
+  @@index([totalMeetups])
+  @@index([totalDurationSeconds])
+  @@index([friendshipLevel])
+  @@map("friendship_stats")
+}
+
+model FriendshipPeriodStats {
+  id                   BigInt   @id @default(autoincrement()) @db.BigInt
+  userAId              BigInt   @map("user_a_id") @db.BigInt
+  userBId              BigInt   @map("user_b_id") @db.BigInt
+  periodType           String   @map("period_type")
+  periodStart          DateTime @map("period_start") @db.Date
+  meetupCount          Int      @default(0) @map("meetup_count")
+  totalDurationSeconds Int      @default(0) @map("total_duration_seconds")
+  totalDistanceMeters  Float    @default(0) @map("total_distance_meters")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  userA User @relation("FriendshipPeriodStatsUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB User @relation("FriendshipPeriodStatsUserB", fields: [userBId], references: [id], onDelete: Cascade)
+
+  @@unique([userAId, userBId, periodType, periodStart])
+  @@index([userAId, periodType, periodStart])
+  @@index([userBId, periodType, periodStart])
+  @@map("friendship_period_stats")
+}
+
+model FriendshipFrequentPlace {
+  id                   BigInt    @id @default(autoincrement()) @db.BigInt
+  userAId              BigInt    @map("user_a_id") @db.BigInt
+  userBId              BigInt    @map("user_b_id") @db.BigInt
+  placeName            String?   @map("place_name")
+  city                 String?
+  country              String?
+  latitude             Float?
+  longitude            Float?
+  meetupCount          Int       @default(0) @map("meetup_count")
+  totalDurationSeconds Int       @default(0) @map("total_duration_seconds")
+  lastVisitedAt        DateTime? @map("last_visited_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  userA User @relation("FriendshipFrequentPlaceUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB User @relation("FriendshipFrequentPlaceUserB", fields: [userBId], references: [id], onDelete: Cascade)
+
+  @@index([userAId, userBId])
+  @@index([city])
+  @@index([meetupCount])
+  @@map("friendship_frequent_places")
+}
+
+model Achievement {
+  id               BigInt            @id @default(autoincrement()) @db.BigInt
+  code             String            @unique
+  name             String
+  description      String
+  iconUrl          String?           @map("icon_url")
+  xpReward         Int               @default(0) @map("xp_reward")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  userAchievements UserAchievement[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id              BigInt   @id @default(autoincrement()) @db.BigInt
+  userId          BigInt   @map("user_id") @db.BigInt
+  achievementId   BigInt   @map("achievement_id") @db.BigInt
+  unlockedAt      DateTime @default(now()) @map("unlocked_at")
+  relatedUserId   BigInt?  @map("related_user_id") @db.BigInt
+  relatedMeetupId BigInt?  @map("related_meetup_id") @db.BigInt
+
+  user          User        @relation("UserAchievements", fields: [userId], references: [id], onDelete: Cascade)
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  relatedUser   User?       @relation("RelatedUserAchievements", fields: [relatedUserId], references: [id], onDelete: SetNull)
+  relatedMeetup Meetup?     @relation("RelatedMeetupAchievements", fields: [relatedMeetupId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, achievementId])
+  @@index([userId, unlockedAt])
+  @@map("user_achievements")
+}
+
+model Challenge {
+  id                   BigInt                @id @default(autoincrement()) @db.BigInt
+  code                 String                @unique
+  name                 String
+  description          String
+  goalType             String                @map("goal_type")
+  goalValue            Int                   @map("goal_value")
+  xpReward             Int                   @default(0) @map("xp_reward")
+  createdAt            DateTime              @default(now()) @map("created_at")
+  friendshipChallenges FriendshipChallenge[]
+
+  @@map("challenges")
+}
+
+model FriendshipChallenge {
+  id            BigInt          @id @default(autoincrement()) @db.BigInt
+  challengeId   BigInt          @map("challenge_id") @db.BigInt
+  userAId       BigInt          @map("user_a_id") @db.BigInt
+  userBId       BigInt          @map("user_b_id") @db.BigInt
+  status        ChallengeStatus @default(ACTIVE)
+  progressValue Int             @default(0) @map("progress_value")
+  targetValue   Int             @map("target_value")
+  startsAt      DateTime        @map("starts_at")
+  endsAt        DateTime        @map("ends_at")
+  completedAt   DateTime?       @map("completed_at")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  userA     User      @relation("FriendshipChallengeUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB     User      @relation("FriendshipChallengeUserB", fields: [userBId], references: [id], onDelete: Cascade)
+
+  @@index([userAId, userBId, status])
+  @@index([challengeId, status])
+  @@index([endsAt])
+  @@map("friendship_challenges")
+}
+
+model FriendshipLevel {
+  id        BigInt   @id @default(autoincrement()) @db.BigInt
+  level     Int      @unique
+  name      String
+  minXp     Int      @map("min_xp")
+  maxXp     Int?     @map("max_xp")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("friendship_levels")
 }
