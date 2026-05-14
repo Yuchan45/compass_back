@@ -1,0 +1,4 @@
+interface:
+  display_name: "Code Review Agent"
+  short_description: "Review PRs for backend risk and quality"
+  default_prompt: "Use $compass-code-review to review this Compass backend PR for architecture, security, SQL, performance, naming, NestJS patterns, and test risk."

@@ -8,6 +8,7 @@ NestJS + TypeScript backend for real-time user location sharing.
 - Prisma ORM with PostgreSQL
 - JWT authentication
 - REST API for auth, users, friendships, and locations
+- Swagger UI for REST API exploration
 - Socket.IO gateway for real-time location updates
 
 ## Setup
@@ -29,6 +30,14 @@ npm run lint
 npm run test
 npm run prisma:studio
 ```
+
+## API Documentation
+
+When the app is running, Swagger UI is available at:
+
+- `GET /api/docs`
+
+See [docs/swagger.md](docs/swagger.md) for Swagger conventions and maintenance notes.
 
 ## API Shape
 
