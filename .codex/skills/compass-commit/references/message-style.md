@@ -1,11 +1,17 @@
 # Commit Message Style
 
-Use Conventional Commits.
+Use Conventional Commits. For new features, always use `feat(scope): description`; do not use `feature(scope): description`.
 
 ## Format
 
 ```text
 type(scope): short imperative summary
+```
+
+Feature format:
+
+```text
+feat(scope): description
 ```
 
 Examples:

@@ -51,6 +51,8 @@ This skill can prepare a commit plan and message automatically. It must not run 
 
 Use scopes when useful: `auth`, `users`, `friendships`, `locations`, `swagger`, `docs`, `prisma`, `realtime`, `config`, `tests`.
 
+Use `feat(scope): description` for new features. Do not use `feature(scope): description`.
+
 ## Approval Language
 
 If the user asks "prepare a commit", stop after the plan, checks, and proposed message.
