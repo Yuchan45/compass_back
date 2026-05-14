@@ -1,0 +1,4 @@
+interface:
+  display_name: "Compass Commit"
+  short_description: "Prepare safe atomic commits with checks"
+  default_prompt: "Use $compass-commit to prepare a safe atomic commit for the current Compass backend changes."
