@@ -23,10 +23,11 @@ export class UpdateProfileDto {
   email?: string;
 
   @ApiPropertyOptional({
-    example: 'compass_user',
+    example: 'yu_nakasone',
     minLength: 3,
     maxLength: 30,
-    pattern: '^[a-zA-Z0-9_]+$',
+    pattern: '^[a-z0-9_.]+$',
+    description: 'Unique lowercase username. Allows letters, numbers, underscore, and dot.',
   })
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim().toLowerCase() : value,
@@ -35,7 +36,7 @@ export class UpdateProfileDto {
   @IsString()
   @MinLength(3)
   @MaxLength(30)
-  @Matches(/^[a-zA-Z0-9_]+$/)
+  @Matches(/^[a-z0-9_.]+$/)
   username?: string;
 
   @ApiPropertyOptional({ example: 'Compass User', minLength: 1, maxLength: 80 })

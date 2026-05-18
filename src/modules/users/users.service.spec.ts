@@ -51,7 +51,7 @@ describe('UsersService', () => {
       ...publicUser,
       languageId: 20n,
       email: 'new@example.com',
-      username: 'new_user',
+      username: 'tomas.nakasone',
       displayName: 'New Name',
       avatarUrl: 'https://example.com/avatar.png',
       locationSharingEnabled: false,
@@ -59,7 +59,7 @@ describe('UsersService', () => {
 
     const response = await service.updateProfile('1', {
       email: ' NEW@example.com ',
-      username: ' New_User ',
+      username: ' Tomas.Nakasone ',
       displayName: ' New Name ',
       avatarUrl: 'https://example.com/avatar.png',
       languageId: '20',
@@ -72,7 +72,7 @@ describe('UsersService', () => {
           id: {
             not: 1n,
           },
-          OR: [{ email: 'new@example.com' }, { username: 'new_user' }],
+          OR: [{ email: 'new@example.com' }, { username: 'tomas.nakasone' }],
         }),
       }),
     );
@@ -83,7 +83,7 @@ describe('UsersService', () => {
         },
         data: expect.objectContaining({
           email: 'new@example.com',
-          username: 'new_user',
+          username: 'tomas.nakasone',
           displayName: 'New Name',
           avatarUrl: 'https://example.com/avatar.png',
           languageId: 20n,
@@ -96,7 +96,7 @@ describe('UsersService', () => {
         id: '1',
         languageId: '20',
         email: 'new@example.com',
-        username: 'new_user',
+        username: 'tomas.nakasone',
         locationSharingEnabled: false,
       }),
     );

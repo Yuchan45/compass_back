@@ -29,8 +29,8 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto): Promise<AuthResponse> {
-    const email = dto.email.toLowerCase();
-    const username = dto.username.toLowerCase();
+    const email = dto.email.trim().toLowerCase();
+    const username = dto.username.trim().toLowerCase();
     const existingUser = await this.prisma.user.findFirst({
       where: {
         OR: [{ email }, { username }],
@@ -232,9 +232,10 @@ export class AuthService {
     const emailPrefix = email.split('@')[0] ?? 'user';
     const sanitized = emailPrefix
       .toLowerCase()
-      .replace(/[^a-z0-9_]/g, '_')
+      .replace(/[^a-z0-9_.]/g, '_')
+      .replace(/\.+/g, '.')
       .replace(/_+/g, '_')
-      .replace(/^_+|_+$/g, '');
+      .replace(/^[._]+|[._]+$/g, '');
     const base = (sanitized.length >= 3 ? sanitized : `user_${sanitized}`).slice(0, 30) || 'user';
 
     for (let index = 0; index < 100; index += 1) {

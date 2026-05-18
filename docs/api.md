@@ -10,6 +10,26 @@ Authorization: Bearer <accessToken>
 
 API-facing IDs are strings backed by database `BigInt` values.
 
+## Usernames
+
+Usernames are unique globally and stored in lowercase. Users can choose them during registration.
+They can also update them later through `PATCH /api/users/me` as long as the same rules still pass and the new username is not already taken.
+
+Rules:
+
+- 3 to 30 characters.
+- Lowercase letters, numbers, underscore, and dot only.
+- No spaces.
+- Must be unique.
+
+Valid examples:
+
+```txt
+yu_nakasone
+keynaka
+tomas.nakasone
+```
+
 ## Friendships
 
 ### List Friendships
