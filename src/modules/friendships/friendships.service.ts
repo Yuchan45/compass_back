@@ -7,15 +7,27 @@ import {
 import { parseId } from '../../common/utils/parse-id';
 import { serializeBigInts } from '../../common/utils/serialize-bigint';
 import { PrismaService } from '../../database/prisma.service';
-import { userPublicSelect } from '../users/user.select';
 import { CreateFriendRequestDto } from './dto/create-friend-request.dto';
+import {
+  FindFriendshipsQueryDto,
+  FriendshipQueryStatus,
+  FriendshipQueryType,
+} from './dto/find-friendships-query.dto';
+
+const friendshipUserBasicSelect = {
+  id: true,
+  email: true,
+  username: true,
+  displayName: true,
+  avatarUrl: true,
+};
 
 const friendshipInclude = {
   requester: {
-    select: userPublicSelect,
+    select: friendshipUserBasicSelect,
   },
   addressee: {
-    select: userPublicSelect,
+    select: friendshipUserBasicSelect,
   },
 };
 
@@ -130,18 +142,28 @@ export class FriendshipsService {
     return serializeBigInts(updatedFriendship);
   }
 
-  async findByUser(userId: string) {
+  async findByUser(userId: string, query: FindFriendshipsQueryDto = {}) {
     const userDbId = parseId(userId, 'userId');
+    const status = this.mapQueryStatus(query.status);
+    const userWhere =
+      query.type === FriendshipQueryType.Sent
+        ? { requesterId: userDbId }
+        : query.type === FriendshipQueryType.Received
+          ? { addresseeId: userDbId }
+          : {
+              OR: [
+                {
+                  requesterId: userDbId,
+                },
+                {
+                  addresseeId: userDbId,
+                },
+              ],
+            };
     const friendships = await this.prisma.friendship.findMany({
       where: {
-        OR: [
-          {
-            requesterId: userDbId,
-          },
-          {
-            addresseeId: userDbId,
-          },
-        ],
+        ...userWhere,
+        ...(status ? { status } : {}),
       },
       include: friendshipInclude,
       orderBy: {
@@ -150,5 +172,9 @@ export class FriendshipsService {
     });
 
     return serializeBigInts(friendships);
+  }
+
+  private mapQueryStatus(status?: FriendshipQueryStatus) {
+    return status === FriendshipQueryStatus.Rejected ? 'DECLINED' : status;
   }
 }

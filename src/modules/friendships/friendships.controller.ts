@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiConflictResponse,
@@ -13,6 +13,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { AuthenticatedUser } from '../auth/types/authenticated-user.type';
 import { CreateFriendRequestDto } from './dto/create-friend-request.dto';
+import { FindFriendshipsQueryDto } from './dto/find-friendships-query.dto';
 import { FriendshipsService } from './friendships.service';
 
 @ApiTags('friendships')
@@ -55,10 +56,12 @@ export class FriendshipsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List friendships for the authenticated user.' })
+  @ApiOperation({
+    summary: 'List friendships for the authenticated user, optionally filtered by type and status.',
+  })
   @ApiOkResponse({ description: 'Friendships involving the authenticated user.' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid JWT.' })
-  findMine(@CurrentUser() user: AuthenticatedUser) {
-    return this.friendshipsService.findByUser(user.id);
+  findMine(@CurrentUser() user: AuthenticatedUser, @Query() query: FindFriendshipsQueryDto) {
+    return this.friendshipsService.findByUser(user.id, query);
   }
 }

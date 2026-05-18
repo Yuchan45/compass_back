@@ -39,6 +39,8 @@ When the app is running, Swagger UI is available at:
 
 See [docs/swagger.md](docs/swagger.md) for Swagger conventions and maintenance notes.
 
+See [docs/api.md](docs/api.md) for detailed REST contract notes.
+
 ## Development Workflow
 
 See [docs/codex-skills.md](docs/codex-skills.md) for the local Codex skills and recommended implementation, documentation, review, and commit workflow.
