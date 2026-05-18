@@ -13,6 +13,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { AuthenticatedUser } from '../auth/types/authenticated-user.type';
 import { CreateFriendRequestDto } from './dto/create-friend-request.dto';
+import { FindFriendsQueryDto } from './dto/find-friends-query.dto';
 import { FindFriendshipsQueryDto } from './dto/find-friendships-query.dto';
 import { FriendshipsService } from './friendships.service';
 
@@ -53,6 +54,17 @@ export class FriendshipsController {
   @ApiUnauthorizedResponse({ description: 'Missing or invalid JWT.' })
   declineRequest(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
     return this.friendshipsService.declineRequest(user.id, id);
+  }
+
+  @Get('friends')
+  @ApiOperation({
+    summary:
+      'List accepted friends for the authenticated user, optionally filtered by date range and email.',
+  })
+  @ApiOkResponse({ description: 'Accepted friendships involving the authenticated user.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid JWT.' })
+  findFriends(@CurrentUser() user: AuthenticatedUser, @Query() query: FindFriendsQueryDto) {
+    return this.friendshipsService.findFriends(user.id, query);
   }
 
   @Get()

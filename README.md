@@ -57,6 +57,7 @@ See [docs/codex-skills.md](docs/codex-skills.md) for the local Codex skills and 
 - `POST /api/friendships/:id/accept`
 - `POST /api/friendships/:id/decline`
 - `GET /api/friendships`
+- `GET /api/friendships/friends`
 - `POST /api/locations/me`
 - `GET /api/locations/friends/latest`
 

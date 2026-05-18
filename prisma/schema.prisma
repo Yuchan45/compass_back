@@ -108,6 +108,7 @@ model Friendship {
   requesterId BigInt           @map("requester_id") @db.BigInt
   addresseeId BigInt           @map("addressee_id") @db.BigInt
   status      FriendshipStatus @default(PENDING)
+  acceptedAt  DateTime?        @map("accepted_at")
   createdAt   DateTime         @default(now()) @map("created_at")
   updatedAt   DateTime         @updatedAt @map("updated_at")
 
@@ -117,6 +118,8 @@ model Friendship {
   @@unique([requesterId, addresseeId])
   @@index([requesterId, status])
   @@index([addresseeId, status])
+  @@index([requesterId, status, acceptedAt])
+  @@index([addresseeId, status, acceptedAt])
   @@map("friendships")
 }
 
