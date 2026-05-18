@@ -27,8 +27,12 @@ describe('UsersService', () => {
       user: {
         findUnique: jest.fn(),
         findFirst: jest.fn(),
+        findMany: jest.fn(),
         update: jest.fn(),
         delete: jest.fn(),
+      },
+      friendship: {
+        findMany: jest.fn(),
       },
       language: {
         findUnique: jest.fn(),
@@ -122,6 +126,130 @@ describe('UsersService', () => {
       }),
     ).rejects.toBeInstanceOf(ConflictException);
     expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+  it('searches profiles by query and prioritizes mutual friends', async () => {
+    const { service, prisma } = createService();
+
+    prisma.friendship.findMany
+      .mockResolvedValueOnce([
+        {
+          requesterId: 1n,
+          addresseeId: 10n,
+        },
+        {
+          requesterId: 11n,
+          addresseeId: 1n,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          requesterId: 2n,
+          addresseeId: 10n,
+        },
+        {
+          requesterId: 3n,
+          addresseeId: 11n,
+        },
+        {
+          requesterId: 3n,
+          addresseeId: 12n,
+        },
+      ]);
+    prisma.user.findMany.mockResolvedValue([
+      {
+        id: 2n,
+        email: 'zoe@example.com',
+        username: 'zoe',
+        displayName: 'Zoe Friend',
+        avatarUrl: null,
+        lastSeenAt: null,
+        requestedFriendships: [],
+        receivedFriendships: [
+          {
+            id: 20n,
+            requesterId: 1n,
+            addresseeId: 2n,
+            status: 'PENDING',
+          },
+        ],
+      },
+      {
+        id: 3n,
+        email: 'ana@example.com',
+        username: 'ana',
+        displayName: 'Ana Friend',
+        avatarUrl: 'https://example.com/avatar.png',
+        lastSeenAt: new Date('2026-05-18T12:00:00.000Z'),
+        requestedFriendships: [],
+        receivedFriendships: [],
+      },
+    ]);
+
+    const response = await service.searchProfiles('1', {
+      query: 'friend',
+      limit: 20,
+    });
+
+    expect(prisma.user.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: {
+            not: 1n,
+          },
+          OR: [
+            {
+              email: {
+                contains: 'friend',
+                mode: 'insensitive',
+              },
+            },
+            {
+              username: {
+                contains: 'friend',
+                mode: 'insensitive',
+              },
+            },
+            {
+              displayName: {
+                contains: 'friend',
+                mode: 'insensitive',
+              },
+            },
+          ],
+        }),
+      }),
+    );
+    expect(response).toEqual({
+      data: [
+        {
+          profile: expect.objectContaining({
+            id: '3',
+            username: 'ana',
+            displayName: 'Ana Friend',
+          }),
+          mutualFriendsCount: 1,
+          relationship: null,
+        },
+        {
+          profile: expect.objectContaining({
+            id: '2',
+            username: 'zoe',
+            displayName: 'Zoe Friend',
+          }),
+          mutualFriendsCount: 1,
+          relationship: {
+            id: '20',
+            status: 'PENDING',
+            direction: 'sent',
+          },
+        },
+      ],
+      meta: {
+        query: 'friend',
+        limit: 20,
+      },
+    });
   });
 
   it('deletes the authenticated user profile', async () => {

@@ -6,10 +6,58 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { parseId } from '../../common/utils/parse-id';
+import { serializeBigInts } from '../../common/utils/serialize-bigint';
 import { PrismaService } from '../../database/prisma.service';
+import { SearchUsersQueryDto } from './dto/search-users-query.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { mapToPublicUser } from './public-user.mapper';
 import { userPublicSelect } from './user.select';
+
+const DEFAULT_SEARCH_LIMIT = 20;
+const MAX_SEARCH_LIMIT = 50;
+
+const searchableUserSelect = {
+  id: true,
+  email: true,
+  username: true,
+  displayName: true,
+  avatarUrl: true,
+  lastSeenAt: true,
+  requestedFriendships: {
+    select: {
+      id: true,
+      requesterId: true,
+      addresseeId: true,
+      status: true,
+    },
+  },
+  receivedFriendships: {
+    select: {
+      id: true,
+      requesterId: true,
+      addresseeId: true,
+      status: true,
+    },
+  },
+};
+
+type SearchableUser = {
+  id: bigint;
+  email: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+  lastSeenAt: Date | null;
+  requestedFriendships: Relationship[];
+  receivedFriendships: Relationship[];
+};
+
+type Relationship = {
+  id: bigint;
+  requesterId: bigint;
+  addresseeId: bigint;
+  status: string;
+};
 
 @Injectable()
 export class UsersService {
@@ -29,6 +77,84 @@ export class UsersService {
     }
 
     return mapToPublicUser(user);
+  }
+
+  async searchProfiles(userId: string, query: SearchUsersQueryDto = {}) {
+    const userDbId = parseId(userId, 'userId');
+    const search = query.query?.trim();
+    const limit = Math.min(Number(query.limit ?? DEFAULT_SEARCH_LIMIT), MAX_SEARCH_LIMIT);
+    const currentFriendIds = await this.findAcceptedFriendIds(userDbId);
+    const candidates = await this.prisma.user.findMany({
+      where: {
+        id: {
+          not: userDbId,
+        },
+        ...(search
+          ? {
+              OR: [
+                {
+                  email: {
+                    contains: search,
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  username: {
+                    contains: search,
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  displayName: {
+                    contains: search,
+                    mode: 'insensitive',
+                  },
+                },
+              ],
+            }
+          : {}),
+      },
+      select: {
+        ...searchableUserSelect,
+        requestedFriendships: {
+          where: {
+            addresseeId: userDbId,
+          },
+          select: searchableUserSelect.requestedFriendships.select,
+        },
+        receivedFriendships: {
+          where: {
+            requesterId: userDbId,
+          },
+          select: searchableUserSelect.receivedFriendships.select,
+        },
+      },
+    });
+    const candidateFriendIdsByUserId = await this.findAcceptedFriendIdsByUser(
+      candidates.map((candidate) => candidate.id),
+    );
+    const data = candidates
+      .map((candidate) =>
+        this.mapSearchProfile(candidate, currentFriendIds, candidateFriendIdsByUserId),
+      )
+      .sort((left, right) => {
+        if (left.mutualFriendsCount !== right.mutualFriendsCount) {
+          return right.mutualFriendsCount - left.mutualFriendsCount;
+        }
+
+        return left.profile.displayName.localeCompare(right.profile.displayName, undefined, {
+          sensitivity: 'base',
+        });
+      })
+      .slice(0, limit);
+
+    return serializeBigInts({
+      data,
+      meta: {
+        query: search || null,
+        limit,
+      },
+    });
   }
 
   async updateProfile(id: string, dto: UpdateProfileDto) {
@@ -120,6 +246,103 @@ export class UsersService {
     }
 
     return data;
+  }
+
+  private async findAcceptedFriendIds(userId: bigint) {
+    const friendships = await this.prisma.friendship.findMany({
+      where: {
+        status: 'ACCEPTED',
+        OR: [
+          {
+            requesterId: userId,
+          },
+          {
+            addresseeId: userId,
+          },
+        ],
+      },
+      select: {
+        requesterId: true,
+        addresseeId: true,
+      },
+    });
+
+    return new Set(
+      friendships.map((friendship) =>
+        friendship.requesterId === userId ? friendship.addresseeId : friendship.requesterId,
+      ),
+    );
+  }
+
+  private async findAcceptedFriendIdsByUser(userIds: bigint[]) {
+    if (userIds.length === 0) {
+      return new Map<bigint, Set<bigint>>();
+    }
+
+    const friendships = await this.prisma.friendship.findMany({
+      where: {
+        status: 'ACCEPTED',
+        OR: [
+          {
+            requesterId: {
+              in: userIds,
+            },
+          },
+          {
+            addresseeId: {
+              in: userIds,
+            },
+          },
+        ],
+      },
+      select: {
+        requesterId: true,
+        addresseeId: true,
+      },
+    });
+    const friendIdsByUserId = new Map(userIds.map((id) => [id, new Set<bigint>()]));
+
+    for (const friendship of friendships) {
+      friendIdsByUserId.get(friendship.requesterId)?.add(friendship.addresseeId);
+      friendIdsByUserId.get(friendship.addresseeId)?.add(friendship.requesterId);
+    }
+
+    return friendIdsByUserId;
+  }
+
+  private mapSearchProfile(
+    candidate: SearchableUser,
+    currentFriendIds: Set<bigint>,
+    candidateFriendIdsByUserId: Map<bigint, Set<bigint>>,
+  ) {
+    const candidateFriendIds = candidateFriendIdsByUserId.get(candidate.id) ?? new Set<bigint>();
+    const mutualFriendsCount = [...candidateFriendIds].filter((friendId) =>
+      currentFriendIds.has(friendId),
+    ).length;
+    const relationship = this.getRelationshipToCurrentUser(candidate);
+
+    return {
+      profile: {
+        id: candidate.id,
+        email: candidate.email,
+        username: candidate.username,
+        displayName: candidate.displayName,
+        avatarUrl: candidate.avatarUrl,
+        lastSeenAt: candidate.lastSeenAt,
+      },
+      mutualFriendsCount,
+      relationship: relationship
+        ? {
+            id: relationship.id,
+            status: relationship.status,
+            direction: relationship.requesterId === candidate.id ? 'received' : 'sent',
+          }
+        : null,
+    };
+  }
+
+  private getRelationshipToCurrentUser(candidate: SearchableUser) {
+    return candidate.requestedFriendships[0] ?? candidate.receivedFriendships[0] ?? null;
   }
 
   private async assertProfileFieldsAreAvailable(

@@ -53,6 +53,7 @@ See [docs/codex-skills.md](docs/codex-skills.md) for the local Codex skills and 
 - `POST /api/auth/google`
 - `GET /api/users/me`
 - `PATCH /api/users/me`
+- `GET /api/users/search`
 - `POST /api/friendships/requests`
 - `POST /api/friendships/:id/accept`
 - `POST /api/friendships/:id/decline`

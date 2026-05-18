@@ -30,6 +30,62 @@ keynaka
 tomas.nakasone
 ```
 
+## Users
+
+### Search Profiles
+
+```http
+GET /api/users/search
+```
+
+Searches user profiles for friend discovery. The authenticated user is excluded from the result.
+
+Optional query params:
+
+| Param | Values | Behavior |
+| --- | --- | --- |
+| `query` | string | Searches `email`, `username`, and `displayName`. Omit it to list profiles. |
+| `limit` | `1` to `50` | Maximum result count. Defaults to `20`. |
+
+Results are sorted by `mutualFriendsCount` descending, then `profile.displayName` ascending.
+
+Example:
+
+```http
+GET /api/users/search?query=key&limit=20
+```
+
+Response shape:
+
+```json
+{
+  "data": [
+    {
+      "profile": {
+        "id": "2",
+        "email": "keynaka@email.com",
+        "username": "keynaka",
+        "displayName": "Key Naka",
+        "avatarUrl": "https://example.com/avatar.png",
+        "lastSeenAt": "2026-05-18T11:00:00.000Z"
+      },
+      "mutualFriendsCount": 2,
+      "relationship": {
+        "id": "20",
+        "status": "PENDING",
+        "direction": "sent"
+      }
+    }
+  ],
+  "meta": {
+    "query": "key",
+    "limit": 20
+  }
+}
+```
+
+`relationship` is `null` when there is no existing relationship between the authenticated user and the returned profile.
+
 ## Friendships
 
 ### List Friendships

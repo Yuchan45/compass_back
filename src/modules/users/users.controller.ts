@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Patch,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -19,6 +20,7 @@ import {
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { AuthenticatedUser } from '../auth/types/authenticated-user.type';
+import { SearchUsersQueryDto } from './dto/search-users-query.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UsersService } from './users.service';
 
@@ -28,6 +30,16 @@ import { UsersService } from './users.service';
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Get('search')
+  @ApiOperation({
+    summary: 'Search user profiles for friend discovery, prioritized by mutual friends.',
+  })
+  @ApiOkResponse({ description: 'Matching user profiles with mutual friend metadata.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid JWT.' })
+  searchProfiles(@CurrentUser() user: AuthenticatedUser, @Query() query: SearchUsersQueryDto) {
+    return this.usersService.searchProfiles(user.id, query);
+  }
 
   @Get('me')
   @ApiOperation({ summary: 'Get the authenticated user profile.' })
