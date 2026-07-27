@@ -1,0 +1,4 @@
+interface:
+  display_name: "Compass Backend"
+  short_description: "NestJS Prisma backend project standards"
+  default_prompt: "Use $compass-backend to modify the Compass backend while respecting its NestJS, Prisma, PostgreSQL, JWT, and Socket.IO architecture."

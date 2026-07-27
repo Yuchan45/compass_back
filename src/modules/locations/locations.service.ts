@@ -82,7 +82,10 @@ export class LocationsService {
     });
 
     return friendships.map((friendship) =>
-      (friendship.requesterId === userDbId ? friendship.addresseeId : friendship.requesterId).toString(),
+      (friendship.requesterId === userDbId
+        ? friendship.addresseeId
+        : friendship.requesterId
+      ).toString(),
     );
   }
 }

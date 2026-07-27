@@ -1,0 +1,1 @@
+export const DEFAULT_ROLE_CODE = 'CLIENT_FREE';

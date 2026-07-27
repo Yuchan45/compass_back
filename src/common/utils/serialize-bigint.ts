@@ -7,6 +7,10 @@ export function serializeBigInts<T>(value: T): T {
     return value.map((item) => serializeBigInts(item)) as T;
   }
 
+  if (value instanceof Date) {
+    return value;
+  }
+
   if (value && typeof value === 'object') {
     const entries = Object.entries(value).map(([key, item]) => [key, serializeBigInts(item)]);
     return Object.fromEntries(entries) as T;
