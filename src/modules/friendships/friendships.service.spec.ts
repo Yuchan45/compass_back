@@ -28,13 +28,105 @@ describe('FriendshipsService', () => {
         findMany: jest.fn(),
       },
     };
-    const service = new FriendshipsService(prisma as never);
+    const notificationsService = {
+      create: jest.fn(),
+    };
+    const service = new FriendshipsService(prisma as never, notificationsService as never);
 
     return {
       service,
       prisma,
+      notificationsService,
     };
   };
+
+  it('creates a notification when sending a friend request', async () => {
+    const { service, prisma, notificationsService } = createService();
+    const createdAt = new Date('2026-05-18T12:00:00.000Z');
+
+    prisma.user.findUnique.mockResolvedValue({ id: 2n });
+    prisma.friendship.findFirst.mockResolvedValue(null);
+    prisma.friendship.create.mockResolvedValue({
+      id: 10n,
+      requesterId: 1n,
+      addresseeId: 2n,
+      status: 'PENDING',
+      acceptedAt: null,
+      createdAt,
+      updatedAt: createdAt,
+      requester: {
+        ...publicUser,
+        id: 1n,
+        displayName: 'Yuchan',
+      },
+      addressee: {
+        ...publicUser,
+        id: 2n,
+        email: 'keynaka@email.com',
+        username: 'keynaka',
+        displayName: 'Key Naka',
+      },
+    });
+
+    await service.createRequest('1', { addresseeId: '2' });
+
+    expect(notificationsService.create).toHaveBeenCalledWith({
+      receiverUserId: 2n,
+      triggeredByUserId: 1n,
+      type: 'FRIEND_REQUEST_RECEIVED',
+      title: 'Yuchan sent you a friend request.',
+      body: 'Review the request from your Friends screen.',
+      data: {
+        friendshipId: '10',
+        requesterId: '1',
+      },
+    });
+  });
+
+  it('creates a notification when accepting a friend request', async () => {
+    const { service, prisma, notificationsService } = createService();
+    const createdAt = new Date('2026-05-18T12:00:00.000Z');
+
+    prisma.friendship.findFirst.mockResolvedValue({
+      id: 10n,
+      requesterId: 1n,
+      addresseeId: 2n,
+      status: 'PENDING',
+    });
+    prisma.friendship.update.mockResolvedValue({
+      id: 10n,
+      requesterId: 1n,
+      addresseeId: 2n,
+      status: 'ACCEPTED',
+      acceptedAt: createdAt,
+      createdAt,
+      updatedAt: createdAt,
+      requester: {
+        ...publicUser,
+        id: 1n,
+        displayName: 'Yuchan',
+      },
+      addressee: {
+        ...publicUser,
+        id: 2n,
+        displayName: 'Key Naka',
+      },
+    });
+
+    await service.acceptRequest('2', '10');
+
+    expect(notificationsService.create).toHaveBeenCalledWith({
+      receiverUserId: 1n,
+      triggeredByUserId: 2n,
+      type: 'FRIEND_REQUEST_ACCEPTED',
+      title: 'Key Naka accepted your friend request.',
+      body: 'You are now friends on Compass.',
+      data: {
+        friendshipId: '10',
+        addresseeId: '2',
+      },
+    });
+  });
 
   it('lists received pending friendships for the authenticated user', async () => {
     const { service, prisma } = createService();

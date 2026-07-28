@@ -7,6 +7,7 @@ import {
 import { parseId } from '../../common/utils/parse-id';
 import { serializeBigInts } from '../../common/utils/serialize-bigint';
 import { PrismaService } from '../../database/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateFriendRequestDto } from './dto/create-friend-request.dto';
 import {
   FindFriendsQueryDto,
@@ -64,7 +65,10 @@ const MAX_FRIENDS_LIMIT = 100;
 
 @Injectable()
 export class FriendshipsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   async createRequest(requesterId: string, dto: CreateFriendRequestDto) {
     if (requesterId === dto.addresseeId) {
@@ -114,6 +118,18 @@ export class FriendshipsService {
       include: friendshipInclude,
     });
 
+    await this.notificationsService.create({
+      receiverUserId: addresseeDbId,
+      triggeredByUserId: requesterDbId,
+      type: 'FRIEND_REQUEST_RECEIVED',
+      title: `${friendship.requester.displayName} sent you a friend request.`,
+      body: 'Review the request from your Friends screen.',
+      data: {
+        friendshipId: friendship.id.toString(),
+        requesterId: requesterDbId.toString(),
+      },
+    });
+
     return serializeBigInts(friendship);
   }
 
@@ -141,6 +157,18 @@ export class FriendshipsService {
         acceptedAt: new Date(),
       },
       include: friendshipInclude,
+    });
+
+    await this.notificationsService.create({
+      receiverUserId: updatedFriendship.requesterId,
+      triggeredByUserId: userDbId,
+      type: 'FRIEND_REQUEST_ACCEPTED',
+      title: `${updatedFriendship.addressee.displayName} accepted your friend request.`,
+      body: 'You are now friends on Compass.',
+      data: {
+        friendshipId: updatedFriendship.id.toString(),
+        addresseeId: userDbId.toString(),
+      },
     });
 
     return serializeBigInts(updatedFriendship);

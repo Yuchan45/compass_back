@@ -6,6 +6,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { FriendshipsModule } from './modules/friendships/friendships.module';
 import { HealthModule } from './modules/health/health.module';
 import { LocationsModule } from './modules/locations/locations.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { RealtimeModule } from './modules/realtime/realtime.module';
 import { UsersModule } from './modules/users/users.module';
 
@@ -24,6 +25,7 @@ import { UsersModule } from './modules/users/users.module';
     UsersModule,
     FriendshipsModule,
     LocationsModule,
+    NotificationsModule,
     RealtimeModule,
   ],
 })
