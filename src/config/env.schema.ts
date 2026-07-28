@@ -8,4 +8,8 @@ export const envSchema = Joi.object({
   JWT_EXPIRES_IN: Joi.string().default('15m'),
   GOOGLE_CLIENT_ID: Joi.string().required(),
   CORS_ORIGIN: Joi.string().allow('').default(''),
+  CLOUDINARY_CLOUD_NAME: Joi.string().allow('').optional(),
+  CLOUDINARY_API_KEY: Joi.string().allow('').optional(),
+  CLOUDINARY_API_SECRET: Joi.string().allow('').optional(),
+  CLOUDINARY_AVATAR_FOLDER: Joi.string().allow('').default('compass/avatars/defaults'),
 });

@@ -29,6 +29,24 @@ npm run build
 npm run lint
 npm run test
 npm run prisma:studio
+npm run avatars:sync
+```
+
+## Cloudinary Avatar Presets
+
+Set these variables before syncing or serving default avatar presets:
+
+```bash
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+CLOUDINARY_AVATAR_FOLDER=compass/avatars/defaults
+```
+
+Upload the 30 DiceBear default SVG avatars to Cloudinary. The API returns PNG delivery URLs so Expo/React Native can render them reliably:
+
+```bash
+npm run avatars:sync
 ```
 
 ## API Documentation
@@ -51,6 +69,7 @@ See [docs/codex-skills.md](docs/codex-skills.md) for the local Codex skills and 
 - `POST /api/auth/register`
 - `POST /api/auth/login`
 - `POST /api/auth/google`
+- `GET /api/avatars/presets`
 - `GET /api/users/me`
 - `PATCH /api/users/me`
 - `GET /api/users/search`

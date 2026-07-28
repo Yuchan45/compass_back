@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import configuration from './config/configuration';
 import { envSchema } from './config/env.schema';
 import { AuthModule } from './modules/auth/auth.module';
+import { AvatarsModule } from './modules/avatars/avatars.module';
 import { FriendshipsModule } from './modules/friendships/friendships.module';
 import { HealthModule } from './modules/health/health.module';
 import { LocationsModule } from './modules/locations/locations.module';
@@ -22,6 +23,7 @@ import { UsersModule } from './modules/users/users.module';
     }),
     HealthModule,
     AuthModule,
+    AvatarsModule,
     UsersModule,
     FriendshipsModule,
     LocationsModule,

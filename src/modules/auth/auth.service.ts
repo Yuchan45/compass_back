@@ -6,6 +6,7 @@ import { OAuth2Client, TokenPayload } from 'google-auth-library';
 import { DEFAULT_ROLE_CODE } from '../../common/constants/role.constants';
 import { PrismaService } from '../../database/prisma.service';
 import { parseId } from '../../common/utils/parse-id';
+import { AvatarsService } from '../avatars/avatars.service';
 import { mapToPublicUser, type UserWithPublicProfile } from '../users/public-user.mapper';
 import { userPublicSelect } from '../users/user.select';
 import { PublicUser } from '../users/types/public-user.type';
@@ -23,6 +24,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly avatarsService: AvatarsService,
     config: ConfigService,
   ) {
     this.googleClientId = config.getOrThrow<string>('auth.googleClientId');
@@ -44,6 +46,7 @@ export class AuthService {
     const languageId = await this.resolveLanguageId(dto.languageId);
     const roleId = await this.getDefaultRoleId();
     const passwordHash = await bcrypt.hash(dto.password, 12);
+    const avatarUrl = this.avatarsService.getPresetUrl(dto.avatarPresetId);
     const user = await this.prisma.user.create({
       data: {
         languageId,
@@ -52,6 +55,7 @@ export class AuthService {
         username,
         displayName: dto.displayName,
         passwordHash,
+        avatarUrl,
       },
       select: userPublicSelect,
     });

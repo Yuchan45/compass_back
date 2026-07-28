@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
   IsEmail,
+  IsIn,
   IsOptional,
   IsString,
   IsNumberString,
@@ -9,6 +10,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { avatarPresetIds } from '../../avatars/avatar-presets';
 
 export class RegisterDto {
   @ApiProperty({ example: 'user@example.com', maxLength: 120 })
@@ -43,6 +45,15 @@ export class RegisterDto {
   @MinLength(8)
   @MaxLength(128)
   password!: string;
+
+  @ApiProperty({
+    example: 'default-avatar-01',
+    enum: avatarPresetIds,
+    description: 'Selected default avatar preset id.',
+  })
+  @IsString()
+  @IsIn(avatarPresetIds)
+  avatarPresetId!: string;
 
   @ApiPropertyOptional({ example: '1', description: 'Language id as a stringified BigInt.' })
   @IsOptional()

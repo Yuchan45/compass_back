@@ -55,7 +55,17 @@ describe('AuthService', () => {
     const config = {
       getOrThrow: jest.fn().mockReturnValue('google-client-id'),
     };
-    const service = new AuthService(prisma as never, jwtService as never, config as never);
+    const avatarsService = {
+      getPresetUrl: jest
+        .fn()
+        .mockReturnValue('https://res.cloudinary.com/demo/default-avatar-01.svg'),
+    };
+    const service = new AuthService(
+      prisma as never,
+      jwtService as never,
+      avatarsService as never,
+      config as never,
+    );
     const googleClient = {
       verifyIdToken: jest.fn().mockResolvedValue({
         getPayload: () => googlePayload,
@@ -72,9 +82,42 @@ describe('AuthService', () => {
       service,
       prisma,
       jwtService,
+      avatarsService,
       googleClient,
     };
   };
+
+  it('registers a password user with the selected default avatar preset', async () => {
+    const { avatarsService, prisma, service } = createService();
+
+    prisma.user.findFirst.mockResolvedValue(null);
+    prisma.language.findUnique.mockResolvedValue({ id: 10n });
+    prisma.role.findUnique.mockResolvedValue({ id: 20n });
+    prisma.user.create.mockResolvedValue({
+      ...publicUser,
+      avatarUrl: 'https://res.cloudinary.com/demo/default-avatar-01.svg',
+    });
+
+    const response = await service.register({
+      avatarPresetId: 'default-avatar-01',
+      displayName: 'User Name',
+      email: 'User@Gmail.com',
+      password: 'Abcd123!',
+      username: 'User',
+    });
+
+    expect(avatarsService.getPresetUrl).toHaveBeenCalledWith('default-avatar-01');
+    expect(prisma.user.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          avatarUrl: 'https://res.cloudinary.com/demo/default-avatar-01.svg',
+          email: 'user@gmail.com',
+          username: 'user',
+        }),
+      }),
+    );
+    expect(response.user.avatarUrl).toBe('https://res.cloudinary.com/demo/default-avatar-01.svg');
+  });
 
   it('creates a user from a verified Google ID token', async () => {
     const { service, prisma } = createService();
