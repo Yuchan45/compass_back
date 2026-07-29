@@ -17,6 +17,11 @@ export const userPublicSelect = {
       code: true,
     },
   },
+  settings: {
+    select: {
+      colorTheme: true,
+    },
+  },
   lastSeenAt: true,
   createdAt: true,
   updatedAt: true,

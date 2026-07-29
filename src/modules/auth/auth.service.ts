@@ -56,6 +56,9 @@ export class AuthService {
         displayName: dto.displayName,
         passwordHash,
         avatarUrl,
+        settings: {
+          create: {},
+        },
       },
       select: userPublicSelect,
     });
@@ -158,6 +161,9 @@ export class AuthService {
         displayName: this.getGoogleDisplayName(payload, email),
         googleSub: payload.sub,
         avatarUrl: payload.picture,
+        settings: {
+          create: {},
+        },
       },
       select: userPublicSelect,
     });

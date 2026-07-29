@@ -16,6 +16,9 @@ const publicUser = {
   role: {
     code: 'CLIENT_FREE',
   },
+  settings: {
+    colorTheme: 'LIGHT',
+  },
   lastSeenAt: null,
   createdAt: new Date('2026-01-01T00:00:00.000Z'),
   updatedAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -112,6 +115,9 @@ describe('AuthService', () => {
         data: expect.objectContaining({
           avatarUrl: 'https://res.cloudinary.com/demo/default-avatar-01.svg',
           email: 'user@gmail.com',
+          settings: {
+            create: {},
+          },
           username: 'user',
         }),
       }),
@@ -146,6 +152,9 @@ describe('AuthService', () => {
           displayName: 'User Name',
           googleSub: 'google-sub-1',
           avatarUrl: 'https://example.com/avatar.png',
+          settings: {
+            create: {},
+          },
         }),
       }),
     );

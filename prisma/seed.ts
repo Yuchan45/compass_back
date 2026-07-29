@@ -228,6 +228,16 @@ async function main() {
       },
     });
 
+    await prisma.userSettings.upsert({
+      create: {
+        userId: storedUser.id,
+      },
+      update: {},
+      where: {
+        userId: storedUser.id,
+      },
+    });
+
     userIdByEmail.set(storedUser.email, storedUser.id);
   }
 

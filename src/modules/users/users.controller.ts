@@ -22,6 +22,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { AuthenticatedUser } from '../auth/types/authenticated-user.type';
 import { SearchUsersQueryDto } from './dto/search-users-query.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpdateUserSettingsDto } from './dto/update-user-settings.dto';
 import { UsersService } from './users.service';
 
 @ApiTags('users')
@@ -55,6 +56,14 @@ export class UsersController {
   @ApiUnauthorizedResponse({ description: 'Missing or invalid JWT.' })
   updateMe(@CurrentUser() user: AuthenticatedUser, @Body() dto: UpdateProfileDto) {
     return this.usersService.updateProfile(user.id, dto);
+  }
+
+  @Patch('me/settings')
+  @ApiOperation({ summary: 'Update the authenticated user settings.' })
+  @ApiOkResponse({ description: 'Updated public user profile with settings.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid JWT.' })
+  updateMySettings(@CurrentUser() user: AuthenticatedUser, @Body() dto: UpdateUserSettingsDto) {
+    return this.usersService.updateSettings(user.id, dto);
   }
 
   @Delete('me')

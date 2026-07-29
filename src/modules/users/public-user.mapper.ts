@@ -1,4 +1,7 @@
+import { UserColorTheme } from '@prisma/client';
 import type { PublicUser } from './types/public-user.type';
+
+type PublicColorTheme = PublicUser['settings']['colorTheme'];
 
 export type UserWithPublicProfile = {
   id: bigint;
@@ -15,6 +18,9 @@ export type UserWithPublicProfile = {
   role: {
     code: string;
   };
+  settings: {
+    colorTheme: UserColorTheme;
+  } | null;
   lastSeenAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -31,9 +37,16 @@ export function mapToPublicUser(user: UserWithPublicProfile): PublicUser {
     displayName: user.displayName,
     avatarUrl: user.avatarUrl,
     locationSharingEnabled: user.locationSharingEnabled,
+    settings: {
+      colorTheme: mapColorTheme(user.settings?.colorTheme),
+    },
     roleCode: user.role.code,
     lastSeenAt: user.lastSeenAt,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };
+}
+
+function mapColorTheme(colorTheme: UserColorTheme | undefined): PublicColorTheme {
+  return colorTheme === UserColorTheme.DARK ? 'dark' : 'light';
 }

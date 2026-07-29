@@ -4,12 +4,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, UserColorTheme } from '@prisma/client';
 import { parseId } from '../../common/utils/parse-id';
 import { serializeBigInts } from '../../common/utils/serialize-bigint';
 import { PrismaService } from '../../database/prisma.service';
 import { SearchUsersQueryDto } from './dto/search-users-query.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ColorThemePreference, UpdateUserSettingsDto } from './dto/update-user-settings.dto';
 import { mapToPublicUser } from './public-user.mapper';
 import { userPublicSelect } from './user.select';
 
@@ -178,6 +179,40 @@ export class UsersService {
     } catch (error) {
       this.handlePrismaWriteError(error);
     }
+  }
+
+  async updateSettings(id: string, dto: UpdateUserSettingsDto) {
+    const userId = parseId(id, 'id');
+
+    if (Object.keys(dto).length === 0) {
+      throw new BadRequestException('At least one settings field must be provided.');
+    }
+
+    await this.prisma.userSettings.upsert({
+      where: {
+        userId,
+      },
+      create: {
+        userId,
+        colorTheme: this.toPrismaColorTheme(dto.colorTheme),
+      },
+      update: {
+        colorTheme: this.toPrismaColorTheme(dto.colorTheme),
+      },
+    });
+
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: userPublicSelect,
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    return mapToPublicUser(user);
   }
 
   async deleteProfile(id: string): Promise<void> {
@@ -397,5 +432,9 @@ export class UsersService {
     }
 
     throw error;
+  }
+
+  private toPrismaColorTheme(colorTheme: ColorThemePreference | undefined) {
+    return colorTheme === ColorThemePreference.Dark ? UserColorTheme.DARK : UserColorTheme.LIGHT;
   }
 }

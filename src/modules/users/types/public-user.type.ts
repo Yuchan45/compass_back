@@ -8,6 +8,9 @@ export interface PublicUser {
   displayName: string;
   avatarUrl: string | null;
   locationSharingEnabled: boolean;
+  settings: {
+    colorTheme: 'light' | 'dark';
+  };
   roleCode: string;
   lastSeenAt: Date | null;
   createdAt: Date;

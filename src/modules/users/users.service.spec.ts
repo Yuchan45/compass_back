@@ -1,4 +1,5 @@
 import { BadRequestException, ConflictException } from '@nestjs/common';
+import { ColorThemePreference } from './dto/update-user-settings.dto';
 import { UsersService } from './users.service';
 
 const publicUser = {
@@ -15,6 +16,9 @@ const publicUser = {
   },
   role: {
     code: 'CLIENT_FREE',
+  },
+  settings: {
+    colorTheme: 'LIGHT',
   },
   lastSeenAt: null,
   createdAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -36,6 +40,9 @@ describe('UsersService', () => {
       },
       language: {
         findUnique: jest.fn(),
+      },
+      userSettings: {
+        upsert: jest.fn(),
       },
     };
     const service = new UsersService(prisma as never);
@@ -126,6 +133,40 @@ describe('UsersService', () => {
       }),
     ).rejects.toBeInstanceOf(ConflictException);
     expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+  it('updates authenticated user settings', async () => {
+    const { service, prisma } = createService();
+
+    prisma.userSettings.upsert.mockResolvedValue({
+      id: 1n,
+      userId: 1n,
+      colorTheme: 'DARK',
+    });
+    prisma.user.findUnique.mockResolvedValue({
+      ...publicUser,
+      settings: {
+        colorTheme: 'DARK',
+      },
+    });
+
+    const response = await service.updateSettings('1', {
+      colorTheme: ColorThemePreference.Dark,
+    });
+
+    expect(prisma.userSettings.upsert).toHaveBeenCalledWith({
+      where: {
+        userId: 1n,
+      },
+      create: {
+        userId: 1n,
+        colorTheme: 'DARK',
+      },
+      update: {
+        colorTheme: 'DARK',
+      },
+    });
+    expect(response.settings.colorTheme).toBe('dark');
   });
 
   it('searches profiles by query and prioritizes mutual friends', async () => {

@@ -46,6 +46,13 @@ enum NotificationType {
   @@map("notification_type")
 }
 
+enum UserColorTheme {
+  LIGHT
+  DARK
+
+  @@map("user_color_theme")
+}
+
 model Language {
   id       BigInt @id @default(autoincrement()) @db.BigInt
   language String @unique
@@ -113,8 +120,21 @@ model User {
   friendshipChallengesAsUserB  FriendshipChallenge[]     @relation("FriendshipChallengeUserB")
   receivedNotifications        Notification[]            @relation("ReceivedNotifications")
   triggeredNotifications       Notification[]            @relation("TriggeredNotifications")
+  settings                     UserSettings?
 
   @@map("users")
+}
+
+model UserSettings {
+  id         BigInt         @id @default(autoincrement()) @db.BigInt
+  userId     BigInt         @unique @map("user_id") @db.BigInt
+  colorTheme UserColorTheme @default(LIGHT) @map("color_theme")
+  createdAt  DateTime       @default(now()) @map("created_at")
+  updatedAt  DateTime       @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
 }
 
 model Friendship {
